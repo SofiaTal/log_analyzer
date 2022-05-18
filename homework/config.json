@@ -1,0 +1,8 @@
+{
+  "REPORT_SIZE": 100,
+  "REPORT_DIR": "./reports",
+  "REPORT_TEMPLATE": "./reports/template/report.html",
+  "LOG_DIR": "./log",
+  "LOG_FILE": "./log/work_log.txt",
+  "ERROR_LIMIT": 0.01
+}
