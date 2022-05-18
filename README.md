@@ -6,7 +6,7 @@
 This repository contains python script for first Otus homework
 and all necessary repos for test it. Requirements for it you can see [here](homework.pdf).
 
-Example of report rendering with script including 10 most loaded URL's you can see [here](./reports/report-2018.06.30.html).
+Example of report rendering with script including 10 most loaded URL's you can see [here](reports/report-2018.06.30.html).
 It matches with example report.
 
 ### Directories and files

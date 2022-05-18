@@ -8,6 +8,6 @@
 /dataSources.local.xml
 
 
-/log/nginx-access-ui.*
+/log/nginx-access-ui.log-20170630
 /log_analyzer_reduced.py
 /reports/report-2017.06.30.html

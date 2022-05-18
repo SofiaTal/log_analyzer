@@ -39,7 +39,7 @@ class StatsFunctionTest(unittest.TestCase):
         self.assertEqual(expected_result, data)
 
     def test_process_file_without_errors(self):
-        file_name = "./log/test_log"
+        file_name = "log/test_log"
         result_dict = log_analyzer.process_file(file_name)
         expected_data = {
             "/api/1/photogenic_banners/list/?server_name=WIN7RB4": [0.133],
@@ -49,7 +49,7 @@ class StatsFunctionTest(unittest.TestCase):
         self.assertEqual(expected_data, result_dict)
 
     def test_process_file(self):
-        file_name = "./log/test_log_error"
+        file_name = "log/test_log_error"
         error_limit = 0.01
         with self.assertRaises(Exception) as context:
             log_analyzer.process_file(file_name, error_limit)
