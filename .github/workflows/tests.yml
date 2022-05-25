@@ -24,9 +24,5 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Display Python version
         run: python -c "import sys; print(sys.version)"
-      - name: Install unittest
-        run: |
-          python -m pip install --upgrade pip
-          pip install unittest
       - name: Run tests
         run: python log_tests.py
