@@ -14,9 +14,11 @@ import json
 import sys
 import os
 import re
+import statistics
 from datetime import datetime
 from typing import List
 from string import Template
+from collections import namedtuple
 
 config = {
     "REPORT_SIZE": 10,
@@ -43,6 +45,7 @@ LOG_RECORD_RE = (
 )
 
 DEFAULT_CONFIG_PATH = "config.json"
+LogFileDate = namedtuple("Log_File_date", "file date")
 
 
 def logger(log_path):
@@ -60,35 +63,38 @@ def logger(log_path):
 
 
 def merge_config(default_config, custom_config):
-    if custom_config is None:
-        return default_config
     if not os.path.isfile(custom_config):
         raise FileNotFoundError("Config file doesn't exist")
     with open(custom_config, "rb") as cf:
         config_file = json.load(cf)
-        for key, value in default_config.items():
-            if key in config_file:
-                continue
-            else:
-                config_file[key] = default_config[key]
-    return config_file
+    return {**default_config, **config_file}
 
 
 def find_last_log_file(log_path=config["LOG_DIR"]):
     if not os.path.isdir(log_path):
-        return None, None
+        return LogFileDate(None, None)
 
-    files = os.listdir(log_path)
-    regex = r"^nginx-access-ui\.log-\d{8}(\.gz)?$"
-    if files:
-        dates = (filename[20:28] for filename in files if re.match(regex, filename))
-        datetime_list = [datetime.strptime(date, "%Y%m%d") for date in dates]
-        if datetime_list:
-            last_date = max(datetime_list)
-            for file in files:
-                if last_date.strftime("%Y%m%d") in file:
-                    return file, last_date.strftime("%Y.%m.%d")
-    return None, None
+    regex = r"^nginx-access-ui\.log-(?P<date>\d{8})(\.gz)?$"
+    last_log_file = None
+    last_date = None
+    datetime_list = []
+    for file in os.listdir(log_path):
+        match = re.match(regex, file)
+        if not match:
+            continue
+        try:
+            date = datetime.strptime(
+                re.match(regex, file).groupdict()["date"], "%Y%m%d"
+            )
+        except ValueError as e:
+            logging.debug(f"Can't parse date in log {file}: {e}")
+            continue
+
+        datetime_list.append(date)
+        if date == max(datetime_list):
+            last_log_file = file
+            last_date = datetime.strftime(date, "%Y.%m.%d")
+    return LogFileDate(last_log_file, last_date)
 
 
 def process_file(file, errors_limit=None):
@@ -119,22 +125,13 @@ def process_file(file, errors_limit=None):
     return result_dict
 
 
-def find_median(time_list):
-    n = len(time_list)
-    index = n // 2
-    sort = sorted(time_list)
-    if n % 2:
-        return sort[index]
-    return (sort[index - 1] + sort[index]) / 2
-
-
 def find_stats(result_dict) -> List[dict]:
     total_count = 0
     total_time = 0
     data = []
     for url, time_list in result_dict.items():
         count = len(time_list)
-        median = round(find_median(time_list), 3)
+        median = round(statistics.median(time_list), 3)
         time_sum = round(sum(time_list), 3)
         time_avg = round(time_sum / count, 3)
         max_time = max(time_list)
@@ -174,19 +171,20 @@ def render_report(data, filename, template_dir):
 
 
 def main(config_file=None):
-    file, date = find_last_log_file(config_file["LOG_DIR"])
-    if not file:
+    log_date = find_last_log_file(config_file["LOG_DIR"])
+    print(log_date)
+    if not log_date.file:
         logging.info("There is no matching files in log directory")
         return
 
     report_path = os.path.normpath(
-        os.path.join(config_file["REPORT_DIR"], f"report-{date}.html")
+        os.path.join(config_file["REPORT_DIR"], f"report-{log_date.date}.html")
     )
     if os.path.isfile(report_path):
         logging.info("Report with the latest date already exist")
         return
 
-    file_path = os.path.join(config_file["LOG_DIR"], file)
+    file_path = os.path.join(config_file["LOG_DIR"], log_date.file)
     url_time_dict = process_file(file_path, config_file.get("ERROR_LIMIT"))
     log_data = find_stats(url_time_dict)
     data_for_report = create_report_data(log_data, config_file["REPORT_SIZE"])

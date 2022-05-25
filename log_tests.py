@@ -3,11 +3,6 @@ import log_analyzer
 
 
 class StatsFunctionTest(unittest.TestCase):
-    def test_find_median(self):
-        time_list = [1, 3, 5, 27, 1, 1, 1, 2]
-        median = log_analyzer.find_median(time_list)
-        self.assertEqual(1.5, median)
-
     def test_find_stats(self):
         url_time_dict = {
             "first_url": [1, 2, 8, 21, 1],
